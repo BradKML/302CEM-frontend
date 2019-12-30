@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { getUser } from "../api";
 import { useParams } from "react-router-dom";
 import Section from "../Components/Section";
@@ -8,79 +8,37 @@ import Table from "../Components/Table";
 import Title from "../Components/Title";
 import Breadcrumb from "../Components/Breadcrumb";
 import Graph from "../Components/Graph";
-import ScrollAnimation from 'react-animate-on-scroll';
-const data = [
-  {
-    date: "2019-12-07",
-    followers_increase: 18983,
-    follower: 67332471,
-    following_increase: 0,
-    following: 47,
-    tweets_increase: 48,
-    tweets: 46700
-  },
-  {
-    date: "2019-12-08",
-    followers_increase: 24115,
-    follower: 67352688,
-    following_increase: 0,
-    following: 47,
-    tweets_increase: 23,
-    tweets: 46723
-  },
-  {
-    date: "2019-12-09",
-    followers_increase: 39979,
-    follower: 67392667,
-    following_increase: 1,
-    following: 48,
-    tweets_increase: 105,
-    tweets: 46828
-  },
-  {
-    date: "2019-12-10",
-    followers_increase: 30106,
-    follower: 67422773,
-    following_increase: 0,
-    following: 48,
-    tweets_increase: 18,
-    tweets: 46846
-  },
-  {
-    date: "2019-12-11",
-    followers_increase: 24248,
-    follower: 67447021,
-    following_increase: 0,
-    following: 48,
-    tweets_increase: 77,
-    tweets: 46961
-  },
-  {
-    date: "2019-12-12",
-    followers_increase: 24250,
-    follower: 67447023,
-    following_increase: 0,
-    following: 48,
-    tweets_increase: 20,
-    tweets: 46981
-  },
-  {
-    date: "2019-12-13",
-    followers_increase: 24250,
-    follower: 67447021,
-    following_increase: 0,
-    following: 48,
-    tweets_increase: 20,
-    tweets: 47001
-  }
-];
+import ScrollAnimation from "react-animate-on-scroll";
+
 export default () => {
   let { username } = useParams();
-  const user = getUser(username);
-  const lastData = data[data.length - 1];
-  return user ? (
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [user, setUser] = useState(null);
+  useEffect(() => {
+    setError(null)
+    setLoading(true)
+    getUser(username)
+      .then(user => {
+        setUser(user);
+        setLoading(false);
+      })
+      .catch(e=>{
+        setError(e)
+        setLoading(false)
+      });
+  }, [username]);
+  const lastData = user && user.table[user.table.length - 1];
+  if (error) return error.message
+  return loading ? (
     <div>
-      <Herotitle title="302CEM Project" subtitle="User"></Herotitle>
+      <Herotitle subtitle="User"></Herotitle>
+      loading...
+      </div>
+  ) : user ? (
+    <div>
+      <Herotitle subtitle="User"></Herotitle>
       <div className="container" style={{ marginTop: 20 }}>
         <div className="box fade delay-s">
           <Breadcrumb page="Home" currentpage="User"></Breadcrumb>
@@ -91,13 +49,13 @@ export default () => {
                 <img
                   className="is-rounded"
                   alt=""
-                  src="https://bulma.io/images/placeholders/128x128.png"
+                  src={"http://avatars.io/twitter/"+username}
                 ></img>
               </figure>
             </div>
           </div>
-          <Centerlevel title={username}></Centerlevel>
-          <Centerlevel heading="Created at 2017-12-07"></Centerlevel>
+          <Centerlevel title={user.name}></Centerlevel>
+          <Centerlevel heading={"Created at "+user.cre}></Centerlevel>
           <br />
           <nav className="level is-mobile" style={{ paddingBottom: 10 }}>
             <Centerlevel
@@ -112,43 +70,53 @@ export default () => {
             ></Centerlevel>
             <Centerlevel
               numberAnimation
-              title={lastData.follower}
+              title={lastData.followers}
               heading="Followers"
+            ></Centerlevel>
+            <Centerlevel
+              numberAnimation
+              title={user.like}
+              heading="Likes"
             ></Centerlevel>
           </nav>
         </div>
-        <ScrollAnimation animateIn='fade' animateOnce={true} duration={0.7} className="delay-m">
-        <div className="box" style={{ padding: 25 }}>
-          <p className="title">Summary</p>
-          <br />
-          <Table data={data}></Table>
-        </div>
+        <ScrollAnimation
+          animateIn="fade"
+          animateOnce={true}
+          duration={0.7}
+          className="delay-m"
+        >
+          <div className="box" style={{ padding: 25 }}>
+            <p className="title">Summary</p>
+            <br />
+            <Table data={user.table}></Table>
+          </div>
         </ScrollAnimation>
-        <br/>
-        <ScrollAnimation animateIn='fade' duration={0.7} animateOnce={true}>
-        <div className="box" style={{ padding: 25 }}>
-          <p className="title">Graph</p>
-          <br />
-          <Title title="Followers"></Title>
-          <br />
-          <Graph data={data} label="follower"></Graph>
-          <br />
-          <br />
-          <Title title="Following"></Title>
-          <br />
-          <Graph data={data} label="following"></Graph>
-          <br />
-          <br />
-          <Title title="Tweets"></Title>
-          <br />
-          <Graph data={data} label="tweets"></Graph>
-        </div>
+        <br />
+        <ScrollAnimation animateIn="fade" duration={0.7} animateOnce={true}>
+          <div className="box" style={{ padding: 25 }}>
+            <p className="title">Graph</p>
+            <br />
+            <Title title="Followers"></Title>
+            <br />
+            <Graph data={user.table} label="followers"></Graph>
+            <br />
+            <br />
+            <Title title="Following"></Title>
+            <br />
+            <Graph data={user.table} label="following"></Graph>
+            <br />
+            <br />
+            <Title title="Tweets"></Title>
+            <br />
+            <Graph data={user.table} label="tweets"></Graph>
+          </div>
         </ScrollAnimation>
       </div>
     </div>
   ) : (
     <div>
-      <Herotitle title="302CEM Project" subtitle="User Page"></Herotitle>
+      <Herotitle subtitle="User Page"></Herotitle>
       <Section subtitle="no user found."></Section>
     </div>
   );
